@@ -67,7 +67,7 @@ sudo qemu-system-x86_64 \
 -net user,hostfwd=tcp::2223-:22 \
 -nographic
 
-# Local, remote and CXL memory as NUMA (same config as ost)
+# Local, remote and CXL memory as NUMA (same config as host)
 sudo qemu-system-x86_64 \
 -machine q35 \
 -cpu host \

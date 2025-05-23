@@ -50,3 +50,6 @@ as create but without `-cdrom ...`
 
 Copy-paste disk with OS, start VMs with different network interfaces and SSH 
 host fowarding ports.
+
+
+## Memguard installation

@@ -11,9 +11,10 @@ COMMON_SETTINGS="-machine q35 \
 -cpu host \
 -smp 8 \
 --enable-kvm \
+-object memory-backend-ram,size=16G,host-nodes=0,policy=bind,prealloc=on,id=local-mem \
 -object memory-backend-file,size=16G,share=on,mem-path=/dev/shm/ivshmem,host-nodes=2,policy=bind,prealloc=on,id=cxl-mem \
 -device ivshmem-plain,memdev=cxl-mem \
--m 16G,slots=1,maxmem=32G \
+-m 32G,slots=2,maxmem=64G \
 -daemonize \
 -display none"
 
@@ -30,33 +31,3 @@ sudo qemu-system-x86_64 \
 -net nic,macaddr=52:54:00:12:34:02 \
 -net user,hostfwd=tcp::2223-:22 \
 ${COMMON_SETTINGS}
-
-
-sudo qemu-system-x86_64 \
--machine q35 \
--cpu host \
--smp 8 \
---enable-kvm \
--object memory-backend-ram,size=16G,host-nodes=0,policy=bind,prealloc=on,id=local-mem \
--object memory-backend-file,size=16G,share=on,mem-path=/dev/shm/ivshmem,host-nodes=2,policy=bind,prealloc=on,id=cxl-mem \
--numa node,nodeid=0,cpus=0-3,memdev=local-mem \
--numa node,nodeid=1,cpus=4-7,memdev=cxl-mem \
--m 32G,slots=2,maxmem=64G \
--drive if=virtio,file=cxlvm1_disk.qcow2,cache=none \
--net nic,macaddr=52:54:00:12:34:01 \
--net user,hostfwd=tcp::2222-:22 \
--nographic
-
-
-sudo qemu-system-x86_64 \
--machine q35 \
--cpu host \
--smp 8 \
---enable-kvm \
--object memory-backend-ram,size=16G,host-nodes=2,policy=bind,prealloc=on,id=cxl-mem \
--m 16G,slots=1,maxmem=32G \
--numa node,nodeid=0,cpus=0-7,memdev=cxl-mem \
--drive if=virtio,file=cxlvm1_disk.qcow2,cache=none \
--net nic,macaddr=52:54:00:12:34:01 \
--net user,hostfwd=tcp::2222-:22 \
--nographic

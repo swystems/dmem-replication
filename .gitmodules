@@ -1,0 +1,3 @@
+[submodule "memguard"]
+	path = memguard
+	url = git@github.com:daviderovell0/memguard.git
