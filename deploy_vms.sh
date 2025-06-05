@@ -6,7 +6,7 @@
 EXCLUDE_LIST="{'test/','deploy.sh','example.asgard-bench.ini','.vscode','.config.hash'}"
 DEST="dmem-test"
 USER=""
-NODES=("cxlvm1")
+NODES=("cxlvm1" "cxlvm2")
 
 # for each node, execute rsync
 for node in ${NODES[@]}

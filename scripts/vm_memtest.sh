@@ -14,8 +14,8 @@ qemu-system-x86_64 \
 -numa node,nodeid=0,memdev=local-mem \
 -numa node,nodeid=1,memdev=remote-mem \
 -numa node,nodeid=2,memdev=cxl-mem \
--drive if=virtio,file=cxlvm1_disk.qcow2,cache=none \
--net nic,macaddr=52:54:00:12:34:02 \
--net user,hostfwd=tcp::2222-:22 \
+-drive if=virtio,file=vms/ubuntu2204.qcow2,cache=none \
+-net nic,macaddr=52:54:00:12:34:03 \
+-net user,hostfwd=tcp::2223-:22 \
 -daemonize \
 -display none
