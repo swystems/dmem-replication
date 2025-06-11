@@ -1,2 +1,6 @@
+# rust file
+Cargo.lock
 target/
+
+# other
 bpsleep
