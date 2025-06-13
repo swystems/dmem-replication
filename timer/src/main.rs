@@ -5,7 +5,9 @@ pub fn get_time_ns() -> u64 {
     duration.as_nanos() as u64
 }
 
-pub fn pp_sleep(mut ns: u64, threshold: u64){
+// busy poll sleep: alternate between sleeping and busy polling
+// sleep for ns - threshold nanoseconds, busy poll for the rest
+pub fn bpsleep(mut ns: u64, threshold: u64){
     if ns==0{
         return;
     }
@@ -40,8 +42,10 @@ fn main() {
         .arg(clap::arg!(-s --sleep <SLEEP_TIME> "Time to sleep for in usec.").required(true))
         .arg(clap::arg!(-t --threshold <THRESHOLD> "Threshold").default_value("0"))
         .arg(clap::arg!(-r --ratio <RATIO> "Sleep / busy poll ratio").default_value("1"))
+        .arg(clap::arg!(-a --attempts <ATTEMPTS> "Number of tests").default_value("1000"))
         .get_matches();
 
+    // Parse the command line arguments
     let sleep_time = matches.get_one::<String>("sleep").unwrap().replace('_', "");
     let sleep_time =  sleep_time.parse::<u64>().expect("String not parsable");
     let threshold= matches.get_one::<String>("threshold").unwrap().replace('_', "");
@@ -49,7 +53,8 @@ fn main() {
     let  ratio = matches.get_one::<String>("ratio").unwrap().replace('_',"");
     let ratio = ratio.parse::<f32>().expect("String not parsable");
     let mut durations = Vec::new();
-    let attempts = 1000;
+    let attempts = matches.get_one::<String>("attempts").unwrap().replace('_', "");
+    let attempts = attempts.parse::<usize>().expect("String not parsable");
     
     if sleep_time < threshold {
         panic!("Sleep time must be greater than threshold");
@@ -65,7 +70,7 @@ fn main() {
     for _ in 0..attempts{
         let start = std::time::Instant::now();    
     
-        pp_sleep(sleep_time, threshold);
+        bpsleep(sleep_time, threshold);
         let end = start.elapsed();
         durations.push(end);
         //println!("Time to sleep {}, Elapsed {:?}", sleep_time, end);
