@@ -5,9 +5,25 @@ pub fn get_time_ns() -> u64 {
     duration.as_nanos() as u64
 }
 
+fn mean(durations: &[std::time::Duration]) -> f64{
+    let dur = durations.iter().sum::<std::time::Duration>()/ durations.len() as u32;    
+    dur.as_secs_f64()
+}
+
+fn std(durations: &[std::time::Duration]) -> f64{
+    let mean = mean(durations);    
+    let variance = durations.iter().map(|el| {
+            let diff = el.as_secs_f64()- mean;
+            diff*diff
+        }
+     ).sum::<f64>()/durations.len() as f64;
+     variance.sqrt()
+}
+
 // busy poll sleep: alternate between sleeping and busy polling
 // sleep for ns - threshold nanoseconds, busy poll for the rest
-pub fn bpsleep(mut ns: u64, threshold: u64){
+#[no_mangle]
+pub fn busy_poll_sleep(mut ns: u64, threshold: u64){
     if ns==0{
         return;
     }
@@ -29,6 +45,7 @@ pub fn bpsleep(mut ns: u64, threshold: u64){
         ns -= diff.as_nanos() as u64;
         // println!("NS is {ns} {:?}", diff);
     }
+
     let new_start = get_time_ns();
     while get_time_ns() - new_start< ns {
         std::hint::spin_loop();
@@ -70,7 +87,7 @@ fn main() {
     for _ in 0..attempts{
         let start = std::time::Instant::now();    
     
-        bpsleep(sleep_time, threshold);
+        busy_poll_sleep(sleep_time, threshold);
         let end = start.elapsed();
         durations.push(end);
         //println!("Time to sleep {}, Elapsed {:?}", sleep_time, end);
@@ -86,19 +103,4 @@ fn main() {
     println!("Max: {:?}", max.unwrap());
     println!("Min: {:?}", min.unwrap());
     println!("jitter: {:?}us", (max.unwrap().as_nanos() as f32- min.unwrap().as_nanos() as f32)/1000.0);
-}
-
-fn mean(durations: &[std::time::Duration]) -> f64{
-    let dur = durations.iter().sum::<std::time::Duration>()/ durations.len() as u32;    
-    dur.as_secs_f64()
-}
-
-fn std(durations: &[std::time::Duration]) -> f64{
-    let mean = mean(durations);    
-    let variance = durations.iter().map(|el| {
-            let diff = el.as_secs_f64()- mean;
-            diff*diff
-        }
-     ).sum::<f64>()/durations.len() as f64;
-     variance.sqrt()
 }
