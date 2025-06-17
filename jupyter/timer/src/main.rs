@@ -22,9 +22,9 @@ fn std(durations: &[std::time::Duration]) -> f64{
 
 // busy poll sleep: alternate between sleeping and busy polling
 // sleep for ns - threshold nanoseconds, busy poll for the rest
-#[no_mangle]
+#[no_mangle] // display symbol name in perf
 pub fn busy_poll_sleep(mut ns: u64, threshold: u64){
-    if ns==0{
+    if ns==0{ 
         return;
     }
     let start = std::time::Instant::now();

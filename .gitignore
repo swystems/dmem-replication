@@ -4,3 +4,6 @@ target/
 
 # other
 bpsleep
+
+# jupyter
+.ipynb_checkpoints
