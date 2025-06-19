@@ -1,9 +1,11 @@
-# rust file
+# rust files
 Cargo.lock
 target/
 
 # other
 bpsleep
+.env
+*.out
 
 # jupyter
 .ipynb_checkpoints

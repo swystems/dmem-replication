@@ -1,11 +1,12 @@
 [package]
-name = "bpsleep"
+name = "round_test"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 
 [profile.release]
 debug = true
 
 [dependencies]
 clap = "4.5.8"
+libc = "0.2.174"
 sysinfo = "0.30.13"

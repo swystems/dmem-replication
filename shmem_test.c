@@ -13,6 +13,10 @@ int main() {
     int fd = open("/sys/bus/pci/devices/0000:00:03.0/resource2", O_RDWR);
     // mmap to 16 MB
     char *shmem = mmap(NULL, 16*1024*1024, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    if (shmem == MAP_FAILED) {
+        perror("mmap failed");
+        return 1;
+    }
 
     // Write data from VM1
     const char *msg = "Hello from VM1!";
@@ -20,7 +24,7 @@ int main() {
   
     // Read data in VM2
     char buffer[32];
-    stncpy(buffer, shmem, sizeof(buffer)); 
+    strncpy(buffer, shmem, sizeof(buffer)); 
     printf("Received message: %s\n", shmem);
 
     munmap(shmem, 16*1024*1024);
