@@ -18,7 +18,18 @@ pub fn std(durations: &[std::time::Duration]) -> f64{
         }
      ).sum::<f64>()/durations.len() as f64;
      variance.sqrt()
+    }
+
+pub fn percentile(latencies: &Vec<u64>, p: f32) -> u64 {
+    if latencies.is_empty() {
+        return 0;
+    }
+    let mut sorted = latencies.clone();
+    sorted.sort_unstable();
+    let index = (p * sorted.len() as f32).ceil() as usize - 1;
+    sorted[index]
 }
+
 
 // busy poll sleep: alternate between sleeping and busy polling
 // sleep for ns - threshold nanoseconds, busy poll for the rest

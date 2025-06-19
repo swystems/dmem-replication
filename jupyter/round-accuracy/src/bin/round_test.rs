@@ -1,4 +1,4 @@
-use bpsleep::*;
+use round_test::*;
 use libc::{mmap,munmap,PROT_READ,PROT_WRITE,MAP_SHARED};
 use std::fs::{OpenOptions};
 use std::os::unix::io::AsRawFd;
@@ -32,6 +32,14 @@ fn main() {
             .default_value("1000")
             .value_parser(value_parser!(u32))
         )
+        .arg(
+            Arg::new("local")
+            .short('l')
+            .long("local")
+            .help("read from local memory instead of shared memory")
+            .default_value("false")
+            .action(clap::ArgAction::SetTrue)
+        )
         .get_matches();
 
     // Parse the command line arguments
@@ -39,9 +47,10 @@ fn main() {
     let ratio = matches.get_one::<f32>("ratio").unwrap().clone() as f32;
     // let ratio = ratio.parse::<f32>().expect("String not parsable");
     let attempts = matches.get_one::<u32>("attempts").unwrap().clone();
+    let local = matches.get_one::<bool>("local").unwrap().clone();
 
     let mut mem_latencies = Vec::new();
-    let mut latencies = Vec::new();
+    let mut timer_latencies = Vec::new();
     if ratio < 0.0 || ratio > 1.0 {
         panic!("Ratio must be between 0.0 and 1.0");
     }
@@ -67,7 +76,7 @@ fn main() {
         )
     };
     if ptr == libc::MAP_FAILED {
-    panic!("mmap failed: {}", std::io::Error::last_os_error());
+        panic!("mmap failed: {}", std::io::Error::last_os_error());
     }
 
     let ptr = ptr as *mut u8;
@@ -80,14 +89,21 @@ fn main() {
     unsafe {
         std::ptr::read_volatile(ptr);
     }
+
+    let local_mem = vec![0u8; size];
     for _ in 0..attempts{
         let start = std::time::Instant::now();    
-        // write to shared memory
-        unsafe {
-            std::ptr::read_volatile(ptr);
+        // read from local memory
+        if local {
+          let _ = local_mem[0];
+        }          
+        // read from shared memory
+        else {
+            unsafe {
+               std::ptr::read_volatile(ptr);
+            }
         }
         let mem_elapsed = start.elapsed().as_nanos() as u64;
-        // let time_left = round_time - mem_elapsed;
 
         // sleep or busy poll until next round
         if round_time > mem_elapsed  {
@@ -96,10 +112,10 @@ fn main() {
             busy_poll_sleep(time_left, threshold);
         }
 
-        let end = start.elapsed().as_nanos();
+        let end = start.elapsed().as_nanos() as u64;
         mem_latencies.push(mem_elapsed);
-        println!("mem lat {:?}ns, total elapsed {:?}ns", mem_elapsed, end);
-        latencies.push(end);
+        // println!("mem lat {:?}ns, total elapsed {:?}ns", mem_elapsed, end);
+        timer_latencies.push(end - mem_elapsed);
     }
     
     unsafe {
@@ -109,16 +125,24 @@ fn main() {
     let mem_avg = mem_latencies.iter().sum::<u64>() as f64 / attempts as f64;
     let mem_max = mem_latencies.iter().max().unwrap();
     let mem_min = mem_latencies.iter().min().unwrap();
-    let avg = latencies.iter().sum::<u128>() as f64 / attempts as f64; 
-    let max = latencies.iter().max().unwrap();
-    let min = latencies.iter().min().unwrap();
+    let timer_avg = timer_latencies.iter().sum::<u64>() as f64 / attempts as f64; 
+    let timer_max = timer_latencies.iter().max().unwrap();
+    let timer_min = timer_latencies.iter().min().unwrap();
     println!("Desired sleep duration of {round_time} nanoseconds: {attempts} runs");
     println!("Memory Avg: {:?}", mem_avg);
     println!("Memory Max: {:?}", mem_max);
     println!("Memory Min: {:?}", mem_min);
+    println!("Memory 50th percentile: {:?}", percentile(&mem_latencies, 0.5));
+    println!("Memory 95th percentile: {:?}", percentile(&mem_latencies, 0.95));
+    println!("Memory 99th percentile: {:?}", percentile(&mem_latencies, 0.99)); 
+    println!("Memory 99.99th percentile: {:?}", percentile(&mem_latencies, 0.9999));
     println!("jitter: {:?}us", (mem_max - mem_min) as f64/1000.0);
-    println!("Total Avg: {:?}", avg);
-    println!("Total Max: {:?}", max);
-    println!("Total Min: {:?}", min);
-    println!("jitter: {:?}us", (max-min) as f64/1000.0);
+    println!("timer avg: {:?}", timer_avg);
+    println!("timer max: {:?}", timer_max);
+    println!("timer min: {:?}", timer_min);
+    println!("timer 50th percentile: {:?}", percentile(&timer_latencies, 0.5));
+    println!("timer 95th percentile: {:?}", percentile(&timer_latencies, 0.95));
+    println!("timer 99th percentile: {:?}", percentile(&timer_latencies, 0.99));
+    println!("timer 99.99th percentile: {:?}", percentile(&timer_latencies, 0.9999));
+    println!("jitter: {:?}us", (timer_max - timer_min) as f64/1000.0);
 }
