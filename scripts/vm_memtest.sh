@@ -5,7 +5,7 @@
 qemu-system-x86_64 \
 -machine q35 \
 -cpu host \
--smp 33 \
+-smp 65 \
 --enable-kvm \
 -object memory-backend-ram,size=16G,host-nodes=0,policy=bind,prealloc=on,id=local-mem \
 -object memory-backend-ram,size=16G,host-nodes=1,policy=bind,prealloc=on,id=remote-mem \
