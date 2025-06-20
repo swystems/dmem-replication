@@ -1,0 +1,47 @@
+## setup: VMs with CXL numa node attached as ivshmem
+
+dvr0@cxlvm1:/mnt/host-folder/jupyter/timer$ sudo target/debug/round_test --duration 1000 -r 0 -a 10000000
+Desired sleep duration of 1000 nanoseconds: 10000000 runs
+Memory Avg: 351.7066172
+Memory Max: 102812
+Memory Min: 320
+Memory 50th percentile: 330
+Memory 95th percentile: 470
+Memory 99th percentile: 620
+Memory 99.99th percentile: 8661
+jitter: 102.492us
+timer avg: 802.7307345
+timer max: 182445
+timer min: 30
+timer 50th percentile: 810
+timer 95th percentile: 810
+timer 99th percentile: 820
+timer 99.99th percentile: 11350
+jitter: 182.415us
+dvr0@cxlvm1:/mnt/host-folder/jupyter/timer$ cd ..
+dvr0@cxlvm1:/mnt/host-folder/jupyter$ cd accuracy/
+dvr0@cxlvm1:/mnt/host-folder/jupyter/accuracy$ git status
+fatal: detected dubious ownership in repository at '/mnt/host-folder'
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory /mnt/host-folder
+dvr0@cxlvm1:/mnt/host-folder/jupyter/accuracy$ cd ..
+dvr0@cxlvm1:/mnt/host-folder/jupyter$ cd round-accuracy/
+dvr0@cxlvm1:/mnt/host-folder/jupyter/round-accuracy$ sudo target/debug/round_test --duration 1000 -r 0 -a 10000000 --local
+Desired sleep duration of 1000 nanoseconds: 10000000 runs
+Memory Avg: 31.6949342
+Memory Max: 63122
+Memory Min: 29
+Memory 50th percentile: 30
+Memory 95th percentile: 40
+Memory 99th percentile: 40
+Memory 99.99th percentile: 220
+jitter: 63.093us
+timer avg: 1116.692949
+timer max: 134473
+timer min: 30
+timer 50th percentile: 1110
+timer 95th percentile: 1110
+timer 99th percentile: 1111
+timer 99.99th percentile: 11961
+jitter: 134.443us
