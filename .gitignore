@@ -9,3 +9,7 @@ bpsleep
 
 # jupyter
 .ipynb_checkpoints
+
+# local testing
+*.iso
+ibmvm.sh
