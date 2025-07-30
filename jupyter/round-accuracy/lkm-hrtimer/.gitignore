@@ -1,0 +1,8 @@
+# LKM output files
+*.cmd
+*.o
+*.ko
+*.mod.c
+*.mod
+*.symvers
+*.order

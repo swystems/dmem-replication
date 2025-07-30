@@ -1,0 +1,9 @@
+all:
+  hosts:
+    sws01:
+      ansible_host: sws01
+    sws02:
+      ansible_host: sws02
+    sws03:
+      ansible_host: sws03
+
