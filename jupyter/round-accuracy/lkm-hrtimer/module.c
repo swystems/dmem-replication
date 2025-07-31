@@ -14,8 +14,8 @@ MODULE_DESCRIPTION("Test round (timer + memory access) accuracy for sync CXL rep
 MODULE_VERSION("0.1");
 
 // params
-static const uint64_t num_iterations = 1000000;
-static const uint64_t interval_ns = 10000;
+static const uint64_t num_iterations = 10000000;
+static const uint64_t interval_ns = 2000;
 
 // global variables
 static struct hrtimer hr_timer;
@@ -42,22 +42,25 @@ int first_index_of(uint64_t *array, uint64_t value, int size)
 
 enum hrtimer_restart timer_callback(struct hrtimer *timer)
 {
-     /* do your timer stuff here */
     uint64_t cur_time = ktime_get_ns();
 
-    times[i] = cur_time - times[i];
+    // finish iteration
+    if (i > 0) {
+        times[i] = cur_time - times[i];
 
-    // Optional: Print progress every 10000 iterations
-    if (i % 10000 == 0) {
-        pr_info("Iteration %llu/%llu completed\n", i, num_iterations);
+        // Optional: Print progress every 10000 iterations
+        if (i % 10000 == 0) {
+            pr_info("Iteration %llu/%llu completed\n", i, num_iterations);
+        }
     }
-
+    
+    // store the current time for the next iteration
     i++;
-
     if (i < num_iterations) {
         
-        times[i] = ktime_get_ns(); // store the current time for the next iteration
+        // times[i] = ktime_get_ns(); // store the current time for the next iteration
 
+        times[i] = cur_time;
         hrtimer_forward_now(timer,ktime_set(0, interval_ns));
         return HRTIMER_RESTART;
     
@@ -91,61 +94,6 @@ enum hrtimer_restart timer_callback(struct hrtimer *timer)
     
 }
 
-// int round_test(void *data)
-// {
-// 	uint64_t prev_time, cur_time;
-//     uint64_t *times = vzalloc(num_iterations * sizeof(uint64_t));
-//     uint64_t *times_sorted = vzalloc(num_iterations * sizeof(uint64_t));
-//     uint64_t p0, p50, p90, p99, p9999, max;
-
-//     if (times == NULL) {
-//         pr_err("Memory allocation failed for times array\n");
-//         return -ENOMEM;
-//     }
-
-// 	pr_info("Starting with interval: %llu\n", interval_ns);
-
-// 	prev_time = ktime_get_ns();
-//     cur_time = ktime_get_ns();
-
-// 	for (int i = 0; i < num_iterations; i++) {
-//         prev_time = cur_time = ktime_get_ns();
-// 		while ((cur_time - prev_time) < interval_ns) {
-//             // busy loop
-// 			cur_time = ktime_get_ns();
-// 		}
-// 		times[i] = cur_time - prev_time;
-
-//         // Optional: Print progress every 10000 iterations
-//         if (i % 10000 == 0) {
-//             pr_info("Iteration %d/%llu completed\n", i, num_iterations);
-//         }
-// 	} // end of loop
-
-
-//     // sort the measured times in ascending order
-//     memcpy(times_sorted, times, num_iterations * sizeof(uint64_t));
-//     sort(times_sorted, num_iterations, sizeof(uint64_t), is_larger, NULL);
-//     // calculate and print the percentiles
-//     p0 = times_sorted[0];
-//     p50 = times_sorted[num_iterations / 2];
-//     p90 = times_sorted[(90 * num_iterations) / 100];
-//     p99 = times_sorted[(99 * num_iterations) / 100];
-//     p9999 = times_sorted[(9999 * num_iterations) / 10000];
-//     max = times_sorted[num_iterations - 1];
-
-//     pr_info("Timer test results:\n");
-//     pr_info("Min: %llu ns, index: %d\n", p0, first_index_of(times, p0, num_iterations));
-//     pr_info("P50: %llu ns, index: %d\n", p50, first_index_of(times, p50, num_iterations));
-//     pr_info("P90: %llu ns, index: %d\n", p90, first_index_of(times, p90, num_iterations));
-//     pr_info("P99: %llu ns, index: %d\n", p99, first_index_of(times, p99, num_iterations));
-//     pr_info("P9999: %llu ns, index: %d\n", p9999, first_index_of(times, p9999, num_iterations));
-//     pr_info("Max: %llu ns, index: %d\n", max, first_index_of(times, max, num_iterations));
-
-//     vfree(times);
-//     return 0;
-// }
-
 static int __init lkm_init(void)
 {
     ktime_t ktime;
@@ -164,7 +112,6 @@ static int __init lkm_init(void)
     ktime = ktime_set(1, interval_ns); // 1 second, 0 nanoseconds
     hrtimer_init(&hr_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     hr_timer.function = &timer_callback;
-    times[0] = ktime_get_ns();
     hrtimer_start(&hr_timer, ktime, HRTIMER_MODE_REL);
 
     return 0;
