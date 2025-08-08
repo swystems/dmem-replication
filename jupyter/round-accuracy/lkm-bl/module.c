@@ -17,9 +17,9 @@ static uint64_t num_iterations = 1000000;
 static uint64_t interval_ns = 10000;
 
 static struct task_struct *loop_task;
-struct sched_param {
-    int sched_priority;
-} param;
+//struct sched_param {
+//    int sched_priority;
+//} param;
 
 
 int is_larger(const void *a, const void *b)

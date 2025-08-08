@@ -1,0 +1,26 @@
+- hosts: sws02
+- become: yes
+  tasks:
+
+  # -- Configure System  --------------------------------------------------------
+  - name: Disable Hung Task warning
+    shell: |
+      echo 0 > /proc/sys/kernel/hung_task_timeout_secs
+    become: yes
+
+  - name: Disable RCU CPU stall warning and disable NMI watchdog
+    shell: |
+      echo 1 > /sys/module/rcupdate/parameters/rcu_cpu_stall_suppress
+      echo 0 > /proc/sys/kernel/nmi_watchdog
+      echo 0 > /proc/sys/kernel/softlockup_panic
+    become: yes
+
+    # Fix CPU Frequency
+  - name: Fix CPU Frequency and disable turboboost
+    ignore_errors: yes
+    shell: |
+      echo 0 > /sys/devices/system/cpu/cpufreq/boost
+      cpupower frequency-set --governor userspace
+      cpupower --cpu all frequency-set --freq 2.4GHz
+    become: yes
+
