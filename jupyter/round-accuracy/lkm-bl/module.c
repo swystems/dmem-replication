@@ -103,7 +103,7 @@ static int __init lkm_init(void)
     
     // sched_setscheduler(loop_task, SCHED_FIFO, &param);
     sched_set_fifo(loop_task);
-    kthread_bind(loop_task, 10);
+    kthread_bind(loop_task, 1);
     
     if (IS_ERR(loop_task)) {
 		pr_err("Task Error. %s\n", __func__);
