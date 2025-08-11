@@ -13,8 +13,8 @@ MODULE_DESCRIPTION("Test round (timer + memory access) accuracy for sync CXL rep
 MODULE_VERSION("0.1");
 
 // params
-static uint64_t num_iterations = 1000000;
-static uint64_t interval_ns = 10000;
+static uint64_t num_iterations = 100000000;
+static uint64_t interval_ns = 1000;
 
 static struct task_struct *loop_task;
 //struct sched_param {
@@ -42,7 +42,7 @@ int round_test(void *data)
 	uint64_t prev_time, cur_time;
     uint64_t *times = vzalloc(num_iterations * sizeof(uint64_t));
     uint64_t *times_sorted = vzalloc(num_iterations * sizeof(uint64_t));
-    uint64_t p0, p50, p90, p99, p9999, max;
+    uint64_t p0, p50, p90, p99, p999, p9999, max;
 
     if (times == NULL) {
         pr_err("Memory allocation failed for times array\n");
@@ -77,6 +77,7 @@ int round_test(void *data)
     p50 = times_sorted[num_iterations / 2];
     p90 = times_sorted[(90 * num_iterations) / 100];
     p99 = times_sorted[(99 * num_iterations) / 100];
+    p999 = times_sorted[(999 * num_iterations) / 1000];
     p9999 = times_sorted[(9999 * num_iterations) / 10000];
     max = times_sorted[num_iterations - 1];
 
@@ -85,6 +86,7 @@ int round_test(void *data)
     pr_info("P50: %llu ns, index: %d\n", p50, first_index_of(times, p50, num_iterations));
     pr_info("P90: %llu ns, index: %d\n", p90, first_index_of(times, p90, num_iterations));
     pr_info("P99: %llu ns, index: %d\n", p99, first_index_of(times, p99, num_iterations));
+    pr_info("P999: %llu ns, index: %d\n", p999, first_index_of(times, p999, num_iterations));
     pr_info("P9999: %llu ns, index: %d\n", p9999, first_index_of(times, p9999, num_iterations));
     pr_info("Max: %llu ns, index: %d\n", max, first_index_of(times, max, num_iterations));
 
