@@ -18,18 +18,17 @@
 #define _GNU_SOURCE
 
 #include <pthread.h>
+#include <sched.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <syscall.h>
 #include <time.h>
 #include <unistd.h>
-#include <sched.h>
-#include <string.h>
 
 #define FIRST_CORE 1
-
 
 // params
 static const uint64_t num_iterations = 10000000;
@@ -50,12 +49,10 @@ struct sched_attr
 struct sched_attr attr2 = {
     .size = sizeof(struct sched_attr),
     .sched_policy = SCHED_DEADLINE,
-    .sched_runtime = 1, //us
-    .sched_deadline = 1, //us
+    .sched_runtime = 1,                 // us
+    .sched_deadline = 1,                // us
     .sched_period = interval_ns / 1000, // watch out integer division
 };
-
-
 
 uint64_t get_time_ns(void)
 {
@@ -85,43 +82,6 @@ int first_index_of(uint64_t *array, uint64_t value, int size)
     return -1; // Not found
 }
 
-// void *thread_start(void *arg)
-// {
-//     int thread_num = (intptr_t)arg;
-//     static bool set_thread1_attr = true;
-//     static bool set_thread2_attr = true;
-
-//     static int calls_remaining = 100000;
-//     do
-//     {
-//         if (1 == thread_num)
-//         {
-//             if (set_thread1_attr)
-//             {
-//                 syscall(SYS_sched_setattr, 0, &attr1, 0);
-//                 set_thread1_attr = false;
-//             }
-//             calls_on_thread1++;
-//         }
-//         else
-//         {
-//             if (set_thread2_attr)
-//             {
-//                 syscall(SYS_sched_setattr, 0, &attr2, 0);
-//                 set_thread2_attr = false;
-//             }
-//             calls_on_thread2++;
-//         }
-
-//         /* Simulate doing some work */
-//         for (int i = 0; i < 20000; i++)
-//             ;
-
-//     } while (--calls_remaining > 0);
-
-//     return (void *)NULL;
-// }
-
 int main(void)
 {
     uint64_t *times, *times_sorted;
@@ -144,13 +104,14 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    //set the scheduling policy to SCHED_DEADLINE
+    // set the scheduling policy to SCHED_DEADLINE
     syscall(SYS_sched_setattr, 0, &attr2, 0);
 
     for (int i = 0; i < num_iterations; i++)
     {
         times[i] = get_time_ns();
-        while (get_time_ns() - times[i] < interval_ns); // wait for the next interval
+        while (get_time_ns() - times[i] < interval_ns)
+            ; // wait for the next interval
         // if (i > 0)
         times[i] = get_time_ns() - times[i];
         // printf("time[%d]: %lu ns\n", i, times[i]);
