@@ -1,4 +1,4 @@
-# dmem-replication
+# repCXL
 Disaggregated memory experiments. swystems &lt;> IBM research 
 
 
