@@ -1,5 +1,5 @@
 use clap::{value_parser, Arg};
-use repCXL::
+use repCXL::RepCXL;
 
 fn main() {
     let matches = clap::Command::new("round tester")
@@ -28,8 +28,8 @@ fn main() {
     // let ratio = ratio.parse::<f32>().expect("String not parsable");
     let attempts = matches.get_one::<u32>("attempts").unwrap().clone();
 
-    let mut mem_latencies = Vec<u64::new();
-    let mut timer_latencies = Vec<u64>::new();
+    let mut mem_latencies = Vec::<u64>::new();
+    let mut timer_latencies = Vec::<u64>::new();
 
     // let mn1 = MemoryNode::from_file(
     //     1,
