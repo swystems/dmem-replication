@@ -1,8 +1,9 @@
+// benchmark skeleton right now
 use clap::{value_parser, Arg};
-use repCXL::RepCXL;
+// use rep_cxl::RepCXL;
 
 fn main() {
-    let matches = clap::Command::new("round tester")
+    let _matches = clap::Command::new("round tester")
         .version("1.0")
         .about("Test the round time (interval) accuracy of the system")
         .arg(
@@ -24,12 +25,12 @@ fn main() {
         .get_matches();
 
     // Parse the command line arguments
-    let round_time = matches.get_one::<u64>("duration").unwrap().clone();
-    // let ratio = ratio.parse::<f32>().expect("String not parsable");
-    let attempts = matches.get_one::<u32>("attempts").unwrap().clone();
+    // let round_time = matches.get_one::<u64>("duration").unwrap().clone();
+    // // let ratio = ratio.parse::<f32>().expect("String not parsable");
+    // let attempts = matches.get_one::<u32>("attempts").unwrap().clone();
 
-    let mut mem_latencies = Vec::<u64>::new();
-    let mut timer_latencies = Vec::<u64>::new();
+    // let mut mem_latencies = Vec::<u64>::new();
+    // let mut timer_latencies = Vec::<u64>::new();
 
     // let mn1 = MemoryNode::from_file(
     //     1,

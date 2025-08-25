@@ -26,30 +26,6 @@ impl ObjectEntry {
     fn new(id: usize, offset: usize, size: usize) -> Self {
         ObjectEntry { id, offset, size }
     }
-
-    // fn free() -> Self {
-    //     ObjectEntry {
-    //         id: -1,
-    //         offset: -1,
-    //         size: 0,
-    //     }
-    // }
-
-    // fn is_free(&self) -> bool {
-    //     self.id == -1 && self.offset == -1 && self.size == 0
-    // }
-
-    fn update(&mut self, id: usize, offset: usize, size: usize) {
-        self.id = id;
-        self.offset = offset;
-        self.size = size;
-    }
-
-    // fn clear(&mut self) {
-    //     self.id = usize::MAX;
-    //     self.offset = usize::MAX;
-    //     self.size = 0;
-    // }
 }
 /// Shared replicated state across memory nodes.
 #[derive(Copy, Clone, Debug)]
@@ -83,7 +59,7 @@ impl SharedState {
         self.lock = false; // Release the lock
     }
 
-    /// Get the object offset by its id.
+    /// Get the object entry in from the index by its id.
     /// Returns Some<offset> if found, None otherwise.
     /// # Arguments
     /// * `id` - Unique identifier for the object.
@@ -98,8 +74,10 @@ impl SharedState {
         None
     }
 
-    /// Returns Some<offset> of the first free slot (first fit allocation).
-    /// If no suitable slot is found, returns None.
+    /// Allocates an object in the first free slot (first fit allocation) in the shared object index
+    /// and returns Some<offset> if a suitable slot is found, otherwise None.
+    ///
+    /// @TODO: better allocation algorithm
     ///
     /// # Arguments
     /// * 'id' - Unique identifier for the object.
@@ -117,11 +95,6 @@ impl SharedState {
             println!("Object with id {} already exists", id);
             return None;
         }
-
-        // try allocation
-        // let mut start = 0;
-        // let mut free_slot = None;1
-        // let mut free_size = 0;
 
         // bad allocation algorithm
         // loses space when a smaller object takes the place of a larger one which was freed
@@ -150,52 +123,6 @@ impl SharedState {
             }
         }
         None
-
-        // match (entry, free_slot) {
-        //     (None, None) => {
-        //         free_slot = Some(i);
-        //     }
-        //     ()
-        // }
-
-        // // free slot
-        // if entry.is_none() && free_slot.is_none() {
-        //     free_slot = Some(i);
-        //     continue;
-        // }
-        // // update start
-        // if entry.is_some() && free_slot.is_none() {
-        //     start = entry.offset as usize + entry.size;
-        // }
-        // // found an empty gap/fragment
-        // if entry.is_some() && free_slot.is_some() {
-        //     if entry.offset as usize - start > size {
-        //         // place here (first fit)
-        //         self.object_index[free_slot.unwrap()].update(id, start, size);
-        //         self.allocated_size += size;
-        //         return Some(start);
-        //     } else {
-        //         // continue searching
-        //         free_slot = None;
-        //         start = entry.offset as usize + entry.size;
-        //     }
-        // }
-        // }
-
-        // match free_slot {
-        //     Some(slot) => {
-        //         // no gaps, the free slot is the last one in the index
-        //         self.object_index[slot] = ObjectEntry {
-        //             id: id as i32,
-        //             offset: start as i32,
-        //             size,
-        //         };
-        //         self.allocated_size += size;
-        //         Some(start as usize)
-        //     }
-        //     // no free slots
-        //     None => None,
-        // }
     }
 
     /// Removes an object from the state by its id
@@ -373,16 +300,17 @@ mod tests {
 }
 
 /// Shared replicated object across memory nodes
-pub struct RepCXLObject<'a> {
-    id: usize,
-    addresses: HashMap<&'a MemoryNode, *mut u8>, // MemoryNode -> address in that node
-    size: usize,
+pub struct RepCXLObject {
+    pub id: usize,
+    pub size: usize,
+    addresses: HashMap<usize, *mut u8>, // MemoryNode id-> address in that node
 }
 
 pub struct RepCXL {
     pub size: usize,
     chunk_size: usize, // Size of each chunk in bytes
     memory_nodes: Vec<MemoryNode>,
+    objects: HashMap<usize, RepCXLObject>, // id -> object
 }
 
 impl RepCXL {
@@ -394,6 +322,7 @@ impl RepCXL {
             size: total_size,
             chunk_size,
             memory_nodes: Vec::new(),
+            objects: HashMap::new(),
         }
     }
 
@@ -439,7 +368,7 @@ impl RepCXL {
     ///
     /// # Arguments
     /// * `id` - Unique identifier for the object.
-    pub fn new_object<T>(&mut self, id: usize) -> Option<RepCXLObject> {
+    pub fn new_object<T>(&mut self, id: usize) -> Option<&RepCXLObject> {
         let mut addresses = HashMap::new();
         let size = std::mem::size_of::<T>(); // padded and aligned
 
@@ -450,7 +379,7 @@ impl RepCXL {
                 // Allocate memory in each memory node
                 for node in &self.memory_nodes {
                     let addr = node.addr_at(offset);
-                    addresses.insert(node, addr);
+                    addresses.insert(node.id, addr);
 
                     // write state to every memory node
                     unsafe {
@@ -464,10 +393,58 @@ impl RepCXL {
             }
         }
 
-        Some(RepCXLObject {
+        self.objects.insert(
             id,
-            addresses,
-            size,
-        })
+            RepCXLObject {
+                id,
+                addresses,
+                size,
+            },
+        );
+
+        self.objects.get(&id)
+    }
+
+    pub fn remove_object(&mut self, id: usize) {
+        let mut state = self.read_state_from_any().unwrap();
+        state.dealloc_object(id);
+
+        // Update the shared state in each memory node
+        for node in &mut self.memory_nodes {
+            unsafe {
+                std::ptr::write(node.state_addr, state);
+            }
+        }
+    }
+
+    /// Attempt to get an object reference by its ID first in the local cache
+    /// and then in the shared state.
+    pub fn get_object(&mut self, id: usize) -> Option<&RepCXLObject> {
+        if self.objects.contains_key(&id) {
+            return self.objects.get(&id);
+        }
+
+        println!("Object with id {} not found in cache", id);
+
+        let state = self.read_state_from_any().unwrap();
+        if let Some(oe) = state.lookup_object(id) {
+            let mut addresses = HashMap::new();
+            for node in &self.memory_nodes {
+                let addr = node.addr_at(oe.offset);
+                addresses.insert(node.id, addr);
+            }
+
+            self.objects.insert(
+                id,
+                RepCXLObject {
+                    id,
+                    addresses,
+                    size: oe.size,
+                },
+            );
+
+            return self.objects.get(&id);
+        }
+        None
     }
 }

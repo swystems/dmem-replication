@@ -1,4 +1,4 @@
-use repCXL::RepCXL;
+use rep_cxl::RepCXL;
 use std::fs::OpenOptions;
 
 const MEMORY_SIZE: usize = 1024 * 1024; // 1 MiB
@@ -34,7 +34,15 @@ fn main() {
     rcxl.new_object::<String>(100);
 
     rcxl.new_object::<String>(66);
-    rcxl.new_object::<String>(67);
+
+    // {
+    //     let obj67 = rcxl.new_object::<String>(67).unwrap();
+
+    //     obj67.write("Hello, world!");
+    // }
+    // when it goes out of scope, it should be deleted?
+    // nope, some other processes might still use it
+
     // rcxl.remove_object::<String>(66);
     // rcxl.remove_object::<String>(100);
 

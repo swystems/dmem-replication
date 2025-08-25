@@ -1,4 +1,4 @@
-use repCXL::RepCXL;
+use rep_cxl::RepCXL;
 
 fn main() {
     let mut rcxl = RepCXL::new(1024 * 1024, 64);
@@ -7,4 +7,10 @@ fn main() {
     rcxl.add_memory_node_from_file("/dev/shm/repCXL_test3");
 
     rcxl.dump_states();
+
+    if let Some(object) = rcxl.get_object(10) {
+        println!("Found object with ID: {:?}", object.id);
+    } else {
+        println!("Object not found");
+    }
 }
